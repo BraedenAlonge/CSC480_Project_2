@@ -53,12 +53,8 @@ def better_hand(hand1, hand2):
 
 
 def evaluate_hand(hand):
-    print(hand)
-
     hand = list(hand)
     hand.sort()
-
-    print(hand)
     # First, check if list is consecutive:
     # Note that the additional decimal value assigned accounts for
     # higher straights beating out lower straights
@@ -74,29 +70,43 @@ def evaluate_hand(hand):
     flush = is_flush(hand)
 
     # Royal Flush - 10 points
-    if consecutive == 0.3 and flush:
+    if consecutive == 0.3 and flush and (hand[6] % 13 == 0): #highest card is ace
         return 10
     # Straight Flush    - 9 Points
     if consecutive > 0 and flush:
         return 9
+    kinds = cards_of_a_kind(hand) # Determines amount of pairs, sets, etc.
     # Four of a Kind    - 8 Points
-
+    if kinds == 4:
+        return 8
     # Full House        - 7 Points
-
+    if kinds == 5:
+        return 7
     # Flush             - 6 Points
-
+    if flush:
+        return 6
     # Straight          - 5 Point
-
+    print("CONSECUTIVE:", consecutive)
+    if consecutive > 0:
+        return 5 + consecutive  # Decimal value determines if one hand has a higher straight
     # Three of a Kind   - 4 Points
-
+    if kinds == 3:
+        return 4
     # Two Pair          - 3 Points
-
+    if kinds == 2:
+        return 3
     # Pair              - 2 Points
-
+    if kinds == 1:
+        return 2
     # High Card         - 1 Point
+    return 1 # Handle in another function for tiebreaker
 
 def is_consecutive(hand):
     """Checks if hand is consecutive"""
+    hand = [card % 13 for card in hand]
+    if 0 in hand[1:4]:
+        return False
+
     return(hand[0] + 1 == hand[1] and
        hand[1] + 1 == hand[2] and
        hand[2] + 1 == hand[3] and
@@ -123,14 +133,37 @@ def is_flush(hand):
         return True
     return False
 
-def cards_of_a_kind():
+def cards_of_a_kind(hand):
+    hand = [card % 13 for card in hand]
+    unique_hand = set(hand)
     """Returns how many same-type cards there are.
-    If there is a 2 pair, it will return 2 + 2 -> 4.
-    If there is a full house, it will return 2 + 3.
-    A four of a kind will return 10 (Checks for uniqueness
-    as to not mistake it as a 2 pair)."""
+    If there are no pairs, it will return 0.
+    If there is a 2 pair, it will return 1.
+    Two pairs will return 1 + 1, so 2.
+    A three of a kind will return 3.
+    A four of  a kind will return 4.
+    If there is a full house, it will return 2 + 3, so 5.
+    (Checks for uniqueness as to not mistake it as a 2 pair)."""
+    counts = Counter(hand)
+    kinds = 0
+    for card in unique_hand:
+        if counts[card] == 4:  # Four of a kind
+            return 4
+        if counts[card] == 3:  # 3 of a Kind OR potential Full House
+            kinds = 3
+            continue
+        if counts[card] == 2: # 2 pair
+            if kinds == 3:
+                kinds = 5
+                break
+            kinds += 1
+            if kinds == 2:
+                return kinds
 
-    pass
+
+    return kinds
+
+
 def main():
     pass
 
@@ -159,7 +192,39 @@ def main():
     # hand = {12,13,11,10,7,20}
     # print(evaluate_hand(hand))
 
-    print(is_flush([1,2,3,4,60,13]))
+    # print(is_flush([1,2,3,4,60,13]))
+
+    # Cards of a kind
+    # print(cards_of_a_kind([1,1,1,1,2,2,3]))
+    # print("Expected: No pairs (0)\n", cards_of_a_kind([34,56,78,20, 1,12,11]))
+    # print("Expected: 1 Pair (1)\n",cards_of_a_kind([34,11,29,78,12,11]))
+    # print("Expected: 2 Pair (2)\n", cards_of_a_kind([34, 34,56,78,12,12]))
+    # print("Expected: 2 Pair (2)\n", cards_of_a_kind([34, 34,56,56,12,12,10]))
+    # print("Expected: 3 of a kind (3)\n", cards_of_a_kind([34,12,5,56,12,3,12]))
+    # print("Expected: 4 of a kind (4)\n", cards_of_a_kind([34, 34,56,34,12,34,10]))
+    # print("Expected: Full House (5)\n", cards_of_a_kind([34, 34,56,56,1,56,10]))
+
+    # Evaluate hand
+    print("Royal Flush - 10\n", evaluate_hand({1,2,48,49,50,51,52}))
+    print("Royal Flush - 10\n", evaluate_hand({50,52,48,49,12,51,2}))
+    print("Straight Flush - 9\n", evaluate_hand({1,2,3,4,5,6,7}))
+    fofak = {13,2,26,39,2,52,20}
+    for card in fofak:
+        print(card_id(card))
+    print("Four of a kind - 8\n", evaluate_hand(fofak))
+    full = {13,2,26,30,2,52,15}
+    for card in full:
+        print(card_id(card))
+    print("Full House - 7\n", evaluate_hand(full))
+    print("Flush - 6\n", evaluate_hand({2,8,1,4,7,50,40}))
+    straight = {8,9,23,37,12,50,48}
+    for card in straight:
+        print(card_id(card))
+    print("Straight - 5\n", evaluate_hand(straight))
+
+
+
+
 
 if __name__ == '__main__':
     main()
