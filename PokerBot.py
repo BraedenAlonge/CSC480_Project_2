@@ -44,12 +44,17 @@ def better_hand(hand1, hand2):
     """Takes in 2 set of hands."""
     e1 = evaluate_hand(hand1)
     e2 = evaluate_hand(hand2)
+    print("Score: ", e1, ", ", e2)
+
     if e1 > e2:     # HAND 1 WINS
         return 1
     elif e1 < e2:    # HAND 2 WINS
         return 2
-    return 0     # DRAW
+    if e1 == 1: # Both are equal to 1- highest card wins
+        return high_card(hand1,hand2)     # hand1 WIN = 1, hand2 WIN = 2, DRAW = 0
 
+    print("Score: ", e1, ", ", e2)
+    return 0 # Draw elsewhere
 
 
 def evaluate_hand(hand):
@@ -71,32 +76,38 @@ def evaluate_hand(hand):
 
     # Royal Flush - 10 points
     if consecutive == 0.3 and flush and (hand[6] % 13 == 0): #highest card is ace
-        return 10
+        return 10, []
     # Straight Flush    - 9 Points
-    if consecutive > 0 and flush:
-        return 9
-    kinds = cards_of_a_kind(hand) # Determines amount of pairs, sets, etc.
+    if consecutive > 0:
+        if (consecutive == 0.1 and is_flush(hand[0:5])) or (
+                consecutive == 0.2 and is_flush(hand[1:6])) or (
+                consecutive == 0.3 and is_flush(hand[2:])):
+            return 9, hand
+
+    # Straight           - 5 Points
+        return (5 + consecutive), [] # Decimal value determines if one hand has a higher straight
+
+    kinds, card_types = cards_of_a_kind(hand) # Determines amount of pairs, sets, etc.
+                                              # card_types are used for tiebreakers (ie. a better 2-pair)
     # Four of a Kind    - 8 Points
     if kinds == 4:
-        return 8
+        return 8, card_types
     # Full House        - 7 Points
     if kinds == 5:
-        return 7
+        return 7, card_types
     # Flush             - 6 Points
     if flush:
-        return 6
-    # Straight          - 5 Point
-    if consecutive > 0:
-        return 5 + consecutive  # Decimal value determines if one hand has a higher straight
+        return 6, card_types
+
     # Three of a Kind   - 4 Points
     if kinds == 3:
-        return 4
+        return 4, card_types
     # Two Pair          - 3 Points
     if kinds == 2:
-        return 3
+        return 3, card_types
     # Pair              - 2 Points
     if kinds == 1:
-        return 2
+        return 2, card_types
     # High Card         - 1 Point
     return 1 # Handle in another function for tiebreaker
 
@@ -146,22 +157,30 @@ def cards_of_a_kind(hand):
     (Checks for uniqueness as to not mistake it as a 2 pair)."""
     counts = Counter(hand)
     kinds = 0
+    card_type = []
     for card in unique_hand:
         if counts[card] == 4:  # Four of a kind
-            return 4
+            kinds = 4
+            card_type.append(card)
         if counts[card] == 3:  # 3 of a Kind OR potential Full House
+            card_type.append(card)
+            if kinds == 1:
+                kinds = 5
+                continue
             kinds = 3
             continue
         if counts[card] == 2: # 2 pair
+            card_type.append(card)
             if kinds == 3:
                 kinds = 5
                 break
             kinds += 1
-            if kinds == 2:
-                return kinds
+            if kinds == 3: # We have found three 2 pairs. Set kinds back to 2. We will take 2 highest pairs
+                kinds = 2
+                card_type.append(card)
 
 
-    return kinds
+    return kinds, card_type
 
 def high_card(hand1, hand2):
     """Determine highest card as a tiebreaker."""
@@ -235,47 +254,82 @@ def main():
     # print("Expected: 4 of a kind (4)\n", cards_of_a_kind([34, 34,56,34,12,34,10]))
     # print("Expected: Full House (5)\n", cards_of_a_kind([34, 34,56,56,1,56,10]))
 
-    # Evaluate hand
-    print("Royal Flush - 10\n", evaluate_hand({1,2,48,49,50,51,52}))
-    print("Royal Flush - 10\n", evaluate_hand({50,52,48,49,12,51,2}))
-    print("Straight Flush - 9\n", evaluate_hand({1,2,3,4,5,6,7}))
-    fofak = {13,2,26,39,2,52,20}
-    for card in fofak:
-        print(card_id(card))
-    print("Four of a kind - 8\n", evaluate_hand(fofak))
-    full = {13,2,26,30,2,52,15}
-    for card in full:
-        print(card_id(card))
-    print("Full House - 7\n", evaluate_hand(full))
-    print("Flush - 6\n", evaluate_hand({2,8,1,4,7,50,40}))
-    straight = {8,9,23,37,12,50,48}
-    not_straight = {10,11,12,13,14,15,16}
-    for card in straight:
-        print(card_id(card))
-    print("Straight - 5\n", evaluate_hand(straight))
-    for card in not_straight:
-        print(card_id(card))
-    print("NOT Straight - 1\n", evaluate_hand(not_straight))
+    # # Evaluate hand
+    # print("Royal Flush - 10\n", evaluate_hand({1,2,48,49,50,51,52}))
+    # print("Royal Flush - 10\n", evaluate_hand({50,52,48,49,12,51,2}))
+    # print("Straight Flush - 9\n", evaluate_hand({1,2,3,4,5,6,7}))
+    # fofak = {13,2,26,39,2,52,20}
+    # for card in fofak:
+    #     print(card_id(card))
+    # print("Four of a kind - 8\n", evaluate_hand(fofak))
+    # full = {13,2,26,30,2,52,15}
+    # for card in full:
+    #     print(card_id(card))
+    # print("Full House - 7\n", evaluate_hand(full))
+    # print("Flush - 6\n", evaluate_hand({2,8,1,4,7,50,40}))
+    # straight = {8,9,23,37,12,50,48}
+    # not_straight = {10,11,12,13,14,15,16}
+    # for card in straight:
+    #     print(card_id(card))
+    # print("Straight - 5\n", evaluate_hand(straight))
+    # for card in not_straight:
+    #     print(card_id(card))
+    # print("NOT Straight - 1\n", evaluate_hand(not_straight))
+    #
+    # print("Three of a Kind - 4\n", evaluate_hand({1,14,27,4,5,46,48}))
+    # print("Two Pair - 3\n", evaluate_hand({20,33,4,50,6,19,52}))
+    #
+    # for card in {1,14,13,12,11,20,29}:
+    #     print(card_id(card))
+    # print("One Pair - 2\n", evaluate_hand({1,14,13,12,11,20,29}))
+    # print("High Card - 1\n", evaluate_hand({1,44,13,12,11,20,29}))
+    #
+    # # high_card
+    # print("Hand 1 wins - 1:", high_card({1,2,3,4,5,6,7}, {1,2,3,4,5,19,17}))
+    # for card in {33,1,3,51,5,35,37}:
+    #     print(card_id(card))
+    # for card in {1,2,3,4,13,19,17}:
+    #     print(card_id(card))
+    # print("Hand 2 wins - 2:", high_card({33,1,3,51,5,35,37}, {1,2,3,4,13,19,17}))
+    # print("Hands draw  - 0:", high_card({12,13,14,15,16,17,19}, {38,39,40,41,42,43,45}))
 
-    print("Three of a Kind - 4\n", evaluate_hand({1,14,27,4,5,46,48}))
-    print("Two Pair - 3\n", evaluate_hand({20,33,4,50,6,19,52}))
+    # Better Hand
+    # rand_deck1 = get_random_card(7)
+    # rand_deck2 = get_random_card(7)
+    # print("Hand 1: \n")
+    # for card in rand_deck1:
+    #     print(card_id(card))
+    # print("\n-\nHand 2: \n")
+    # for card in rand_deck2:
+    #     print(card_id(card))
+    #
+    # print(better_hand(rand_deck1, rand_deck2))
+    #display_deck()
 
-    for card in {1,14,13,12,11,20,29}:
-        print(card_id(card))
-    print("One Pair - 2\n", evaluate_hand({1,14,13,12,11,20,29}))
-    print("High Card - 1\n", evaluate_hand({1,44,13,12,11,20,29}))
+    print(better_hand({35,36,44,20,21,24,31}, {32,36,14,48,50,24,31}))
+# Hand 1:
+#
+# Ten of Clubs
+# Jack of Clubs
+# Six of Hearts
+# Eight of Diamonds
+# Nine of Diamonds
+# Queen of Diamonds
+# Six of Clubs
+#
+# -
+# Hand 2:
+#
+# Seven of Clubs
+# Jack of Clubs
+# Two of Diamonds
+# Ten of Hearts
+# Queen of Hearts
+# Queen of Diamonds
+# Six of Clubs
+# Score:  (2, [5]) ,  (2, [11])
+# 2
 
-    # high_card
-    print("Hand 1 wins - 1:", high_card({1,2,3,4,5,6,7}, {1,2,3,4,5,19,17}))
-    for card in {33,1,3,51,5,35,37}:
-        print(card_id(card))
-    for card in {1,2,3,4,13,19,17}:
-        print(card_id(card))
-    print("Hand 2 wins - 2:", high_card({33,1,3,51,5,35,37}, {1,2,3,4,13,19,17}))
-    print("Hands draw  - 0:", high_card({12,13,14,15,16,17,19}, {38,39,40,41,42,43,45}))
-
-
-    display_deck()
 
 
 if __name__ == '__main__':
