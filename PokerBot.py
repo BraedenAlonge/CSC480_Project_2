@@ -86,7 +86,6 @@ def evaluate_hand(hand):
     if flush:
         return 6
     # Straight          - 5 Point
-    print("CONSECUTIVE:", consecutive)
     if consecutive > 0:
         return 5 + consecutive  # Decimal value determines if one hand has a higher straight
     # Three of a Kind   - 4 Points
@@ -104,6 +103,7 @@ def evaluate_hand(hand):
 def is_consecutive(hand):
     """Checks if hand is consecutive"""
     hand = [card % 13 for card in hand]
+    hand.sort()
     if 0 in hand[1:4]:
         return False
 
@@ -163,6 +163,37 @@ def cards_of_a_kind(hand):
 
     return kinds
 
+def high_card(hand1, hand2):
+    """Determine highest card as a tiebreaker."""
+    hand1 = [card % 13 for card in hand1]
+    while 0 in hand1:   # Ace value
+        hand1.remove(0)
+        hand1.append(13)
+    hand2 = [card % 13 for card in hand2]
+
+    while 0 in hand2:   # Ace value
+        hand2.remove(0)
+        hand2.append(13)
+
+    hand1.sort()
+    hand2.sort()
+
+    while hand1 and hand2:
+        c1 = hand1.pop()
+        c2 = hand2.pop()
+        if c1 > c2: # Hand 1 wins high card
+            return 1
+        elif c1 < c2: # Hand 2 wins high card
+            return 2
+
+    return 0  # Identical hand
+
+def display_deck():
+    """Displays each card's corresponding numerical value."""
+    print("--- -- - DECK- -- --- \n\nCARD - VALUE\n--\n")
+    for card in range(1,53):
+        print(card_id(card), " - ", card)
+
 
 def main():
     pass
@@ -218,12 +249,33 @@ def main():
     print("Full House - 7\n", evaluate_hand(full))
     print("Flush - 6\n", evaluate_hand({2,8,1,4,7,50,40}))
     straight = {8,9,23,37,12,50,48}
+    not_straight = {10,11,12,13,14,15,16}
     for card in straight:
         print(card_id(card))
     print("Straight - 5\n", evaluate_hand(straight))
+    for card in not_straight:
+        print(card_id(card))
+    print("NOT Straight - 1\n", evaluate_hand(not_straight))
+
+    print("Three of a Kind - 4\n", evaluate_hand({1,14,27,4,5,46,48}))
+    print("Two Pair - 3\n", evaluate_hand({20,33,4,50,6,19,52}))
+
+    for card in {1,14,13,12,11,20,29}:
+        print(card_id(card))
+    print("One Pair - 2\n", evaluate_hand({1,14,13,12,11,20,29}))
+    print("High Card - 1\n", evaluate_hand({1,44,13,12,11,20,29}))
+
+    # high_card
+    print("Hand 1 wins - 1:", high_card({1,2,3,4,5,6,7}, {1,2,3,4,5,19,17}))
+    for card in {33,1,3,51,5,35,37}:
+        print(card_id(card))
+    for card in {1,2,3,4,13,19,17}:
+        print(card_id(card))
+    print("Hand 2 wins - 2:", high_card({33,1,3,51,5,35,37}, {1,2,3,4,13,19,17}))
+    print("Hands draw  - 0:", high_card({12,13,14,15,16,17,19}, {38,39,40,41,42,43,45}))
 
 
-
+    display_deck()
 
 
 if __name__ == '__main__':
