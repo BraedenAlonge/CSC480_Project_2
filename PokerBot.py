@@ -42,38 +42,42 @@ def card_id(card):
 
 def better_hand(hand1, hand2):
     """Takes in 2 set of hands."""
-    e1 = evaluate_hand(hand1)
-    e2 = evaluate_hand(hand2)
+    e1, value_array1 = evaluate_hand(hand1)
+    e2, value_array2  = evaluate_hand(hand2)
     print("Score: ", e1, ", ", e2)
 
-    if e1 > e2:     # HAND 1 WINS
+    if e1 == 1: # Both are equal to 1- highest card wins
+        return high_card(hand1,hand2)     # hand1 WIN = 1, hand2 WIN = 2, DRAW = 0
+    elif e1 > e2:     # HAND 1 WINS
         return 1
     elif e1 < e2:    # HAND 2 WINS
         return 2
-    if e1 == 1: # Both are equal to 1- highest card wins
-        return high_card(hand1,hand2)     # hand1 WIN = 1, hand2 WIN = 2, DRAW = 0
+    elif e1 == e2:   # HANDS ARE EQUAL -> TIE BREAKER (HIGHEST CARDS)
+        return high_card(value_array1, value_array2)
 
-    print("Score: ", e1, ", ", e2)
     return 0 # Draw elsewhere
 
 
 def evaluate_hand(hand):
     hand = list(hand)
     hand.sort()
+
+    hand_mod = [card % 13 for card in hand]
+    hand_mod.sort()
+
     # First, check if list is consecutive:
     # Note that the additional decimal value assigned accounts for
     # higher straights beating out lower straights
-    if is_consecutive(hand[2:]):
+    if is_consecutive(hand_mod[2:]):
         consecutive = 0.3
-    elif is_consecutive(hand[1:6]):
+    elif is_consecutive(hand_mod[1:6]):
         consecutive = 0.2
-    elif is_consecutive(hand[0:5]):
+    elif is_consecutive(hand_mod[0:5]):
         consecutive = 0.1
     else:
         consecutive = 0
 
     flush = is_flush(hand)
-
     # Royal Flush - 10 points
     if consecutive == 0.3 and flush and (hand[6] % 13 == 0): #highest card is ace
         return 10, []
@@ -109,12 +113,11 @@ def evaluate_hand(hand):
     if kinds == 1:
         return 2, card_types
     # High Card         - 1 Point
-    return 1 # Handle in another function for tiebreaker
+    return 1, [] # Handle in another function for tiebreaker
 
 def is_consecutive(hand):
     """Checks if hand is consecutive"""
-    hand = [card % 13 for card in hand]
-    hand.sort()
+    print(hand)
     if 0 in hand[1:4]:
         return False
 
@@ -294,19 +297,20 @@ def main():
     # print("Hands draw  - 0:", high_card({12,13,14,15,16,17,19}, {38,39,40,41,42,43,45}))
 
     # Better Hand
-    # rand_deck1 = get_random_card(7)
-    # rand_deck2 = get_random_card(7)
-    # print("Hand 1: \n")
-    # for card in rand_deck1:
-    #     print(card_id(card))
-    # print("\n-\nHand 2: \n")
-    # for card in rand_deck2:
-    #     print(card_id(card))
-    #
-    # print(better_hand(rand_deck1, rand_deck2))
+    rand_deck1 = get_random_card(7)
+    rand_deck2 = get_random_card(7)
+    print("Hand 1: \n")
+    for card in rand_deck1:
+        print(card_id(card))
+    print("\n-\nHand 2: \n")
+    for card in rand_deck2:
+        print(card_id(card))
+
+    print(better_hand(rand_deck1, rand_deck2))
     #display_deck()
 
-    print(better_hand({35,36,44,20,21,24,31}, {32,36,14,48,50,24,31}))
+    #print(better_hand({35,36,44,20,21,24,31}, {32,36,14,48,50,24,31}))
+    #print(is_consecutive({35,36,44,20,21,24,31}))
 # Hand 1:
 #
 # Ten of Clubs
