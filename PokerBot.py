@@ -46,7 +46,7 @@ def better_hand(hand1, hand2):
     e2, value_array2  = evaluate_hand(hand2)
     print("Score: ", e1, ", ", e2)
 
-    if e1 == 1: # Both are equal to 1- highest card wins
+    if e1 == 1 and e2 == 2: # Both are equal to 1- highest card wins
         return high_card(hand1,hand2)     # hand1 WIN = 1, hand2 WIN = 2, DRAW = 0
     elif e1 > e2:     # HAND 1 WINS
         return 1
@@ -56,6 +56,30 @@ def better_hand(hand1, hand2):
         return high_card(value_array1, value_array2)
 
     return 0 # Draw elsewhere
+
+def game():
+    pass
+
+def poker_round(hand1, community_cards):
+    deck = set(range(1, 53)) # Deck of 52 cards
+    deck = deck - community_cards
+    deck = deck - hand1
+
+    # Simulate random opponent hand
+    opp_hand = get_random_card(2, excluded=deck)
+    if community_cards.size() < 5:
+        deck = deck - opp_hand
+        community_cards.add(get_random_card(5 - community_cards.size(), excluded=deck)) # Add remaining community cards
+
+    # Add community cards to each player's hand
+    hand1 = hand1.add(community_cards)
+    hand2 = opp_hand.add(community_cards)
+
+    return better_hand(hand1, hand2)
+
+
+
+
 
 
 def evaluate_hand(hand):
@@ -113,15 +137,14 @@ def evaluate_hand(hand):
     if kinds == 1:
         return 2, card_types
     # High Card         - 1 Point
-    return 1, [] # Handle in another function for tiebreaker
+    return 1, [] # Handle in another function for
 
 def is_consecutive(hand):
     """Checks if hand is consecutive"""
-    print(hand)
     if 0 in hand[1:4]:
         return False
 
-    return(hand[0] + 1 == hand[1] and
+    return (hand[0] + 1 == hand[1] and
        hand[1] + 1 == hand[2] and
        hand[2] + 1 == hand[3] and
        hand[3] + 1 == hand[4])
