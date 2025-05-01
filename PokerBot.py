@@ -1,5 +1,6 @@
 import random
 from collections import Counter
+import time
 
   # 52  % 13   --> is an Ace
   # 1   % 13 --> is a 2
@@ -55,27 +56,41 @@ def better_hand(hand1, hand2):
     elif e1 == e2:   # HANDS ARE EQUAL -> TIE BREAKER (HIGHEST CARDS)
         return high_card(value_array1, value_array2)
 
-    return 0 # Draw elsewhere
+    return 1 # Draw elsewhere - count as a win, since you split the pot
 
 def game():
     pass
 
-def poker_round(hand1, community_cards):
-    deck = set(range(1, 53)) # Deck of 52 cards
-    deck = deck - community_cards
-    deck = deck - hand1
+def simulate_rounds(hand, community_cards):
+    # Set up
+    cards_in_play = community_cards.copy()
+    cards_in_play.update(hand)
 
+    wins = 0 # Draws will also count as a win - you get your money back, plus some typically, so folding would
+             # be a bad play
+    plays = 0
+    start_time = time.time()
+    while time.time() - start_time < 10:
+        wins += (poker_round(hand, cards_in_play, community_cards) % 2) # mod 2 for a loss (poker_round returns 2 for opponent win)
+        plays += 1
+    print("Time: ", time.time() - start_time)
+    print("Wins: ", wins)
+    print("Plays: ", plays)
+    print(f"Win Percentage: {wins / plays*100:.2f}%")
+
+
+def poker_round(hand1, cards_in_play, community_cards):
     # Simulate random opponent hand
-    opp_hand = get_random_card(2, excluded=deck)
-    if community_cards.size() < 5:
-        deck = deck - opp_hand
-        community_cards.add(get_random_card(5 - community_cards.size(), excluded=deck)) # Add remaining community cards
+    opp_hand = set(get_random_card(2, excluded=cards_in_play))
+    if len(community_cards) < 5:
+        cards_in_play.update(opp_hand)
+        community_cards.update(get_random_card(5 - len(community_cards), excluded=cards_in_play)) # Add remaining community cards
 
     # Add community cards to each player's hand
-    hand1 = hand1.add(community_cards)
-    hand2 = opp_hand.add(community_cards)
+    hand1.update(community_cards)
+    opp_hand.update(community_cards)
 
-    return better_hand(hand1, hand2)
+    return better_hand(hand1, opp_hand)
 
 
 
@@ -320,44 +335,50 @@ def main():
     # print("Hands draw  - 0:", high_card({12,13,14,15,16,17,19}, {38,39,40,41,42,43,45}))
 
     # Better Hand
-    rand_deck1 = get_random_card(7)
-    rand_deck2 = get_random_card(7)
-    print("Hand 1: \n")
-    for card in rand_deck1:
-        print(card_id(card))
-    print("\n-\nHand 2: \n")
-    for card in rand_deck2:
-        print(card_id(card))
-
-    print(better_hand(rand_deck1, rand_deck2))
+    # rand_deck1 = get_random_card(7)
+    # rand_deck2 = get_random_card(7)
+    # print("Hand 1: \n")
+    # for card in rand_deck1:
+    #     print(card_id(card))
+    # print("\n-\nHand 2: \n")
+    # for card in rand_deck2:
+    #     print(card_id(card))
+    #
+    # print(better_hand(rand_deck1, rand_deck2))
     #display_deck()
 
     #print(better_hand({35,36,44,20,21,24,31}, {32,36,14,48,50,24,31}))
     #print(is_consecutive({35,36,44,20,21,24,31}))
-# Hand 1:
-#
-# Ten of Clubs
-# Jack of Clubs
-# Six of Hearts
-# Eight of Diamonds
-# Nine of Diamonds
-# Queen of Diamonds
-# Six of Clubs
-#
-# -
-# Hand 2:
-#
-# Seven of Clubs
-# Jack of Clubs
-# Two of Diamonds
-# Ten of Hearts
-# Queen of Hearts
-# Queen of Diamonds
-# Six of Clubs
-# Score:  (2, [5]) ,  (2, [11])
-# 2
+    # Hand 1:
+    #
+    # Ten of Clubs
+    # Jack of Clubs
+    # Six of Hearts
+    # Eight of Diamonds
+    # Nine of Diamonds
+    # Queen of Diamonds
+    # Six of Clubs
+    #
+    # -
+    # Hand 2:
+    #
+    # Seven of Clubs
+    # Jack of Clubs
+    # Two of Diamonds
+    # Ten of Hearts
+    # Queen of Hearts
+    # Queen of Diamonds
+    # Six of Clubs
+    # Score:  (2, [5]) ,  (2, [11])
+    # 2
 
+    # Poker Round
+    # deck = {2,3,10}
+    # deck.update({13,52}  # Pocket Rockets
+    # print("Round: ", poker_round({13,52},deck,{2,3,10}))
 
+    # Simulate Rounds
+    simulate_rounds({13,52}, set())
 
 if __name__ == '__main__':
     main()
