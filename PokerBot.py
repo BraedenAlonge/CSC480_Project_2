@@ -296,7 +296,7 @@ def main():
                 display_deck()
             elif hand.lower() == 'random':
                 cards = list(get_random_card(2))
-                print("Your hand:\n", card_id(cards[0]), " (", cards[0], ")", "\n",
+                print("Your hand:\n - ", card_id(cards[0]), " (", cards[0], ")\n - ",
                       card_id(cards[1]), " (", cards[1], ")\n")
                 break
             elif hand:
@@ -310,7 +310,7 @@ def main():
                 except ValueError:
                     print("Uh oh! Invalid input.")
                     continue
-                print("You selected:\n", card_id(cards[0]), " (", cards[0], ")", "\n",
+                print("You selected:\n - ", card_id(cards[0]), " (", cards[0], ")\n - ",
                       card_id(cards[1]), " (", cards[1], ")\n")
                 break
         cards_set = set(cards)
@@ -324,15 +324,19 @@ def main():
             if community_cards == '0':
                 com_cards = []
                 round_name = "Pre-Flop"
-            if community_cards == '3': # Flop
+                break
+            elif community_cards == '3': # Flop
                 com_cards = list(get_random_card(3, excluded=cards_set))
                 round_name = "Flop"
+                break
             elif community_cards == '4': # Turn
                 com_cards = list(get_random_card(4, excluded=cards_set))
                 round_name = "Turn"
+                break
             elif community_cards == '5': # River
                 com_cards = list(get_random_card(5, excluded=cards_set))
                 round_name = "River"
+                break
             else:
                 com_cards_str = set(community_cards.split())
                 if com_cards_str and len(com_cards_str) not in [0,3,4,5]:
@@ -356,15 +360,22 @@ def main():
                 rounds = ["Pre-Flop", "", "", "Flop", "Turn", "River"]
                 round_name = rounds[len(com_cards)]
                 break
-        print("\nBeginning at the", round_name, "...")
-        print("Your hand:\n", card_id(cards[0]), "\n", card_id(cards[1]))
+
+        print("\nBeginning at the", round_name, "...\n")
+        print("Your hand:\n - ", card_id(cards[0]), "\n - ", card_id(cards[1]))
+        print(card_visual(card_id(cards[0]), style="Half") + card_visual(card_id(cards[1]), style="Half"))
+        print(card_visual(card_id(cards[0]), style="Reverse") + card_visual(card_id(cards[1]), style="Reverse"))
+
         print("Community cards:\n")
         for c in com_cards:
-            print(card_id(c))
-
-
-
-
+            print(" - ",card_id(c))
+        vis_cards = ""
+        for idx in range(len(com_cards)):
+            vis_cards += card_visual(card_id(com_cards[idx]), style="Half")
+        vis_cards += "\n"
+        for idx in range(len(com_cards)):
+            vis_cards += card_visual(card_id(com_cards[idx]), style="Reverse")
+        print(vis_cards)
 
     # Tests
     # print(get_random_card(1))
