@@ -74,7 +74,7 @@ def simulate_rounds(hand, community_cards):
     print("Wins: ", wins)
     print("Plays: ", plays)
     print(f"Win Percentage: {wins / plays*100:.2f}%")
-
+    return wins / plays
 
 def poker_round(hand1, cards_in_play, community_cards):
     # Simulate random opponent hand
@@ -252,11 +252,10 @@ def display_deck():
     for card in range(1,53):
         print(card_id(card), " - ", card)
 
-def card_visual(card, style="Full"):
+def card_vis_help(card, style="Full"):
     """Displays the card as a typed image."""
     if isinstance(card,int):
         card = card_id(card)
-
     number = card.split()[0]
     suit = card.split()[2]
 
@@ -272,18 +271,33 @@ def card_visual(card, style="Full"):
     elif style == "Reverse":
         return " |" + cards_list[number] + suits[suit] + "| "
 
+def card_visual(cards):
+    if len(cards) == 1:
+        card_vis_help(cards[0], style="Full")
+    elif len(cards) > 1:
+        vis_cards = ""
+        for idx in range(len(cards)):
+            vis_cards += card_vis_help(card_id(cards[idx]), style="Half")
+        vis_cards += "\n"
+        for idx in range(len(cards)):
+            vis_cards += card_vis_help(card_id(cards[idx]), style="Reverse")
+        print(vis_cards)
+    else:
+        print("No cards.")
+
 def main():
     print("Welcome to PokerBot Probability Simulation!")
     choice = input("Press 'Enter' to begin random simulation,"
                    " or customize hand & community cards (press any"
-                   "other key, then 'Enter'). ")
+                   " other key, then 'Enter'). ")
     # Random simulation
     if choice == '':
-        print(card_visual(list(get_random_card(1))[0], style="Full") + "\n")
-        print(card_visual(2, style="Half"))
-        print(card_visual(15, style="Reverse"))
-        print("\n" + card_visual(10, style="Half") + card_visual(52, style="Half"))
-        print(card_visual(10, style="Reverse") + card_visual(52, style="Reverse"))
+        pass
+        # print(card_visual(list(get_random_card(1))[0], style="Full") + "\n")
+        # print(card_visual(2, style="Half"))
+        # print(card_visual(15, style="Reverse"))
+        # print("\n" + card_visual(10, style="Half") + card_visual(52, style="Half"))
+        # print(card_visual(10, style="Reverse") + card_visual(52, style="Reverse"))
 
 
     # Custom simulation
@@ -318,8 +332,9 @@ def main():
             round_name = None
             com_cards = []
             community_cards = input("Enter 0,3,4, or 5 card integers separated by a space to represent the \n"
-                                    "community cards. For random community cards, enter '0' to begin at the \n"
-                                    "pre-flop, '3' for the flop, '4' for the turn, and '5' for the river.")
+                                    "community cards (Ex. '12, 43, 10, 22'). For random community cards, enter\n'0'"
+                                    " to begin at the pre-flop, '3' for the flop, '4' for the turn,\n"
+                                    " and '5' for the river.")
 
             if community_cards == '0':
                 com_cards = []
@@ -363,19 +378,32 @@ def main():
 
         print("\nBeginning at the", round_name, "...\n")
         print("Your hand:\n - ", card_id(cards[0]), "\n - ", card_id(cards[1]))
-        print(card_visual(card_id(cards[0]), style="Half") + card_visual(card_id(cards[1]), style="Half"))
-        print(card_visual(card_id(cards[0]), style="Reverse") + card_visual(card_id(cards[1]), style="Reverse"))
-
+        card_visual(cards)
         print("Community cards:\n")
         for c in com_cards:
             print(" - ",card_id(c))
-        vis_cards = ""
-        for idx in range(len(com_cards)):
-            vis_cards += card_visual(card_id(com_cards[idx]), style="Half")
-        vis_cards += "\n"
-        for idx in range(len(com_cards)):
-            vis_cards += card_visual(card_id(com_cards[idx]), style="Reverse")
-        print(vis_cards)
+        card_visual(com_cards)
+
+        # Begin predictions and finish out game, simulating and choosing to stay or fold.
+        print("Simulation beginning at the", round_name, ".\n")
+        print("Predicting for 10 seconds...")
+
+        sim = simulate_rounds(cards, com_cards)
+        odds = "stay" if  sim > 0.5 else "fold"
+
+        print("Given the odds, PokerBot recommends that you ", odds, ".")
+        while 1:
+            decision = input("Stay (s) or fold (f)?")
+            if decision.lower() == 'f':
+                if sim <= 0.5:
+                    print("Great choice!")
+                    rabbit_hunting = input("Would you like to see what your opponent had? (y or n)")
+                    if rabbit_hunting.lower() == 'y':
+                        pass
+                    else:
+                        print("Better not to know anyways. You're ready for Vegas!")
+                        return
+
 
     # Tests
     # print(get_random_card(1))
@@ -490,7 +518,7 @@ def main():
     # print("Round: ", poker_round({13,52},deck,{2,3,10}))
 
     # Simulate Rounds
-    #simulate_rounds({13,52}, set())
+    # simulate_rounds({13,52}, set())
 
 if __name__ == '__main__':
     main()
