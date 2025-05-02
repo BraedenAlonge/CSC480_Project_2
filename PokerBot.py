@@ -47,7 +47,7 @@ def better_hand(hand1, hand2):
     e2, value_array2  = evaluate_hand(hand2)
     print("Score: ", e1, ", ", e2)
 
-    if e1 == 1 and e2 == 2: # Both are equal to 1- highest card wins
+    if e1 == 1 and e2 == 1: # Both are equal to 1- highest card wins
         return high_card(hand1,hand2)     # hand1 WIN = 1, hand2 WIN = 2, DRAW = 0
     elif e1 > e2:     # HAND 1 WINS
         return 1
@@ -58,19 +58,16 @@ def better_hand(hand1, hand2):
 
     return 1 # Draw elsewhere - count as a win, since you split the pot
 
-def game():
-    pass
 
 def simulate_rounds(hand, community_cards):
-    # Set up
-    cards_in_play = community_cards.copy()
-    cards_in_play.update(hand)
 
     wins = 0 # Draws will also count as a win - you get your money back, plus some typically, so folding would
              # be a bad play
     plays = 0
     start_time = time.time()
     while time.time() - start_time < 10:
+        cards_in_play = set(hand).union(community_cards)
+
         wins += (poker_round(hand, cards_in_play, community_cards) % 2) # mod 2 for a loss (poker_round returns 2 for opponent win)
         plays += 1
     print("Time: ", time.time() - start_time)
@@ -83,14 +80,15 @@ def poker_round(hand1, cards_in_play, community_cards):
     # Simulate random opponent hand
     opp_hand = set(get_random_card(2, excluded=cards_in_play))
     if len(community_cards) < 5:
-        cards_in_play.update(opp_hand)
-        community_cards.update(get_random_card(5 - len(community_cards), excluded=cards_in_play)) # Add remaining community cards
+        exclusions = set(hand1).union(community_cards, opp_hand)
+        community_cards = set(community_cards).union(get_random_card(5 - len(community_cards), excluded=exclusions)) # Add remaining community cards
 
     # Add community cards to each player's hand
-    hand1.update(community_cards)
-    opp_hand.update(community_cards)
-
-    return better_hand(hand1, opp_hand)
+    full_hand1 = set(hand1).union(community_cards)
+    full_opp_hand = set(opp_hand).union(community_cards)
+    print("Hand 1: ", hand1)
+    print("Hand 2: ", opp_hand)
+    return better_hand(full_hand1, full_opp_hand)
 
 
 
@@ -256,7 +254,57 @@ def display_deck():
 
 
 def main():
-    pass
+    print("Welcome to PokerBot Probability Simulation!")
+    choice = input("Press 'Enter' to begin random simulation,"
+                   " or customize hand & community cards (press any"
+                   "other key, then 'Enter'). ")
+    # Random simulation
+    if choice == '':
+        pass
+    # Custom simulation
+    else:
+        while 1:
+            hand = input("Input two numbers between 1 and 52 to select specific cards"
+                         " (Ex. '13 52')."
+                         " For a list of the cards to their corresponding integer representation,"
+                         " enter 'l'. To randomize your hand, enter 'random'.")
+            if hand == 'l':
+                display_deck()
+            elif hand.lower() == 'random':
+                cards = list(get_random_card(2))
+                print("Yor hand:\n", card_id(cards[0]), "\n", card_id(cards[1]))
+            elif hand:
+                cards = hand.split()
+                if len(cards) != 2:
+                    print("Uh oh! Please enter two integer values between 1 and 52, separated by a space.")
+                    continue
+                print("You selected:\n", card_id(cards[0]), " (", cards[0], ")", "\n",
+                      card_id(cards[1]), " (", cards[1], ")\n")
+                break
+        cards_set = set(cards)
+        while 1:
+            round_name = None
+            community_cards = input("Enter 0,3,4, or 5 card integers separated by a space to represent the "
+                                    "community cards. For random community cards, enter '0' to begin at the "
+                                    "pre-flop, '3' for the flop, '4' for the turn, and '5' for the river.")
+
+            if community_cards == '0':
+                com_cards = []
+                round_name = "Pre-Flop"
+            if community_cards == '3': # Flop
+                com_cards = list(get_random_card(3, excluded=cards_set))
+                round_name = "Flop"
+            elif community_cards == '4': # Turn
+                com_cards = list(get_random_card(4, excluded=cards_set))
+                round_name = "Turn"
+            elif community_cards == '5': # River
+                com_cards = list(get_random_card(5, excluded=cards_set))
+                round_name = "River"
+            else:
+                com_cards = community_cards.split()
+                if len(com_cards) not in [0,3,4,5]:
+                    print("Invalid input.")
+                    continue
 
 
 
