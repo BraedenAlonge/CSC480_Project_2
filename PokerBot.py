@@ -252,6 +252,25 @@ def display_deck():
     for card in range(1,53):
         print(card_id(card), " - ", card)
 
+def card_visual(card, style="Full"):
+    """Displays the card as a typed image."""
+    if isinstance(card,int):
+        card = card_id(card)
+
+    number = card.split()[0]
+    suit = card.split()[2]
+
+    cards_list = {"Ace" : 'A', "Two" : '2', "Three" : '3', "Four" : '4', "Five" : '5', "Six" : '6', "Seven" : '7',
+                  "Eight" : '8', "Nine" : '9', "Ten" : '10', "Jack" : 'J', "Queen" : 'Q', "King" : 'K',}
+
+    suits = {"Diamonds" : "\u2666", "Spades" : "\u2660", "Hearts" : "\u2665", "Clubs" : "\u2663"}
+    if style == "Full":
+        return (" |" + suits[suit] + cards_list[number] + "| " + "\n"
+        " |" + cards_list[number] + suits[suit] + "| ")
+    elif style == "Half":
+        return " |" + suits[suit] + cards_list[number] + "| "
+    elif style == "Reverse":
+        return " |" + cards_list[number] + suits[suit] + "| "
 
 def main():
     print("Welcome to PokerBot Probability Simulation!")
@@ -260,23 +279,36 @@ def main():
                    "other key, then 'Enter'). ")
     # Random simulation
     if choice == '':
-        pass
+        print(card_visual(list(get_random_card(1))[0], style="Full") + "\n")
+        print(card_visual(2, style="Half"))
+        print(card_visual(15, style="Reverse"))
+        print("\n" + card_visual(10, style="Half") + card_visual(52, style="Half"))
+        print(card_visual(10, style="Reverse") + card_visual(52, style="Reverse"))
+
+
     # Custom simulation
     else:
         while 1:
-            hand = input("Input two numbers between 1 and 52 to select specific cards"
-                         " (Ex. '13 52')."
-                         " For a list of the cards to their corresponding integer representation,"
-                         " enter 'l'. To randomize your hand, enter 'random'.")
+            hand = input("\nInput two numbers between 1 and 52 to select specific cards (Ex. '13 52').\n"
+                         "For a list of the cards to their corresponding integer representation,"
+                         " enter 'l'. \nTo randomize your hand, enter 'random'.")
             if hand == 'l':
                 display_deck()
             elif hand.lower() == 'random':
                 cards = list(get_random_card(2))
-                print("Yor hand:\n", card_id(cards[0]), "\n", card_id(cards[1]))
+                print("Your hand:\n", card_id(cards[0]), " (", cards[0], ")", "\n",
+                      card_id(cards[1]), " (", cards[1], ")\n")
+                break
             elif hand:
                 cards = hand.split()
-                if len(cards) != 2:
-                    print("Uh oh! Please enter two integer values between 1 and 52, separated by a space.")
+                try:
+                    cards = [int(c) for c in cards]
+                    if (len(cards) != 2 or cards[0] == cards[1]
+                            or not (1 <= cards[0] <= 52) or not (1 <= cards[1] <= 52)):
+                        raise ValueError
+
+                except ValueError:
+                    print("Uh oh! Invalid input.")
                     continue
                 print("You selected:\n", card_id(cards[0]), " (", cards[0], ")", "\n",
                       card_id(cards[1]), " (", cards[1], ")\n")
@@ -284,8 +316,9 @@ def main():
         cards_set = set(cards)
         while 1:
             round_name = None
-            community_cards = input("Enter 0,3,4, or 5 card integers separated by a space to represent the "
-                                    "community cards. For random community cards, enter '0' to begin at the "
+            com_cards = []
+            community_cards = input("Enter 0,3,4, or 5 card integers separated by a space to represent the \n"
+                                    "community cards. For random community cards, enter '0' to begin at the \n"
                                     "pre-flop, '3' for the flop, '4' for the turn, and '5' for the river.")
 
             if community_cards == '0':
@@ -301,13 +334,33 @@ def main():
                 com_cards = list(get_random_card(5, excluded=cards_set))
                 round_name = "River"
             else:
-                com_cards = community_cards.split()
-                if len(com_cards) not in [0,3,4,5]:
+                com_cards_str = set(community_cards.split())
+                if com_cards_str and len(com_cards_str) not in [0,3,4,5]:
                     print("Invalid input.")
                     continue
-
-
-
+                validity_check = True
+                for card in com_cards_str:
+                    try:
+                        card = int(card)
+                        if card in cards_set or not 1 <= card <= 52:
+                            raise ValueError
+                        com_cards.append(card)
+                    except ValueError:
+                        print(f"Invalid input. Please enter unique integers between 1-52, excluding cards already "
+                              f"in your hand ({cards[0]} and {cards[1]}).\n")
+                        validity_check = False
+                        continue
+                if not validity_check:
+                    continue
+                # Passed checks, continue
+                rounds = ["Pre-Flop", "", "", "Flop", "Turn", "River"]
+                round_name = rounds[len(com_cards)]
+                break
+        print("\nBeginning at the", round_name, "...")
+        print("Your hand:\n", card_id(cards[0]), "\n", card_id(cards[1]))
+        print("Community cards:\n")
+        for c in com_cards:
+            print(card_id(c))
 
 
 
@@ -426,7 +479,7 @@ def main():
     # print("Round: ", poker_round({13,52},deck,{2,3,10}))
 
     # Simulate Rounds
-    simulate_rounds({13,52}, set())
+    #simulate_rounds({13,52}, set())
 
 if __name__ == '__main__':
     main()
