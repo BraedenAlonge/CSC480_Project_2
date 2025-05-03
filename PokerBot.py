@@ -45,7 +45,7 @@ def better_hand(hand1, hand2):
     """Takes in 2 set of hands."""
     e1, value_array1 = evaluate_hand(hand1)
     e2, value_array2  = evaluate_hand(hand2)
-    print("Score: ", e1, ", ", e2)
+    # print("Score: ", e1, ", ", e2)
 
     if e1 == 1 and e2 == 1: # Both are equal to 1- highest card wins
         return high_card(hand1,hand2)     # hand1 WIN = 1, hand2 WIN = 2, DRAW = 0
@@ -68,7 +68,7 @@ def simulate_rounds(hand, community_cards):
     while time.time() - start_time < 10:
         cards_in_play = set(hand).union(community_cards)
 
-        wins += (poker_round(hand, cards_in_play, community_cards) % 2) # mod 2 for a loss (poker_round returns 2 for opponent win)
+        wins += (poker_round(hand, cards_in_play, community_cards)[0] % 2) # mod 2 for a loss (poker_round returns 2 for opponent win)
         plays += 1
     print("Time: ", time.time() - start_time)
     print("Wins: ", wins)
@@ -86,9 +86,9 @@ def poker_round(hand1, cards_in_play, community_cards):
     # Add community cards to each player's hand
     full_hand1 = set(hand1).union(community_cards)
     full_opp_hand = set(opp_hand).union(community_cards)
-    print("Hand 1: ", hand1)
-    print("Hand 2: ", opp_hand)
-    return better_hand(full_hand1, full_opp_hand)
+    # print("Hand 1: ", hand1)
+    # print("Hand 2: ", opp_hand)
+    return better_hand(full_hand1, full_opp_hand), opp_hand
 
 
 
@@ -98,23 +98,23 @@ def poker_round(hand1, cards_in_play, community_cards):
 def evaluate_hand(hand):
     hand = list(hand)
     hand.sort()
-
-    hand_mod = [card % 13 for card in hand]
+    hand_mod = []
+    for card in hand:
+        mod = card % 13
+        if mod == 0:
+            mod = 13
+        if mod not in hand_mod:
+            hand_mod.append(mod)
     hand_mod.sort()
 
     # First, check if list is consecutive:
     # Note that the additional decimal value assigned accounts for
     # higher straights beating out lower straights
-    if is_consecutive(hand_mod[2:]):
-        consecutive = 0.3
-    elif is_consecutive(hand_mod[1:6]):
-        consecutive = 0.2
-    elif is_consecutive(hand_mod[0:5]):
-        consecutive = 0.1
-    else:
-        consecutive = 0
+
+    consecutive = is_consecutive(hand_mod)
 
     flush = is_flush(hand)
+
     # Royal Flush - 10 points
     if consecutive == 0.3 and flush and (hand[6] % 13 == 0): #highest card is ace
         return 10, []
@@ -154,13 +154,27 @@ def evaluate_hand(hand):
 
 def is_consecutive(hand):
     """Checks if hand is consecutive"""
-    if 0 in hand[1:4]:
-        return False
+    consecutive = 0
+    points = 0
 
-    return (hand[0] + 1 == hand[1] and
-       hand[1] + 1 == hand[2] and
-       hand[2] + 1 == hand[3] and
-       hand[3] + 1 == hand[4])
+    for c in range(len(hand) - 1):
+        if hand[c] + 1 == hand[c+1]:
+            consecutive += 1
+            if consecutive >= 4:
+                points = float(c) / 10 - 0.2
+        elif hand[c] == hand[c+1]:
+            continue
+        else:
+            consecutive = 0
+    return points
+    #
+    # if 0 in hand[1:4]:
+    #     return False
+    #
+    # return (hand[0] + 1 == hand[1] and
+    #    hand[1] + 1 == hand[2] and
+    #    hand[2] + 1 == hand[3] and
+    #    hand[3] + 1 == hand[4])
 
 def is_flush(hand):
     suits = []
@@ -201,6 +215,7 @@ def cards_of_a_kind(hand):
         if counts[card] == 4:  # Four of a kind
             kinds = 4
             card_type.append(card)
+            break
         if counts[card] == 3:  # 3 of a Kind OR potential Full House
             card_type.append(card)
             if kinds == 1:
@@ -283,7 +298,7 @@ def card_visual(cards):
             vis_cards += card_vis_help(card_id(cards[idx]), style="Reverse")
         print(vis_cards)
     else:
-        print("No cards.")
+        print("No cards.\n")
 
 def main():
     print("Welcome to PokerBot Probability Simulation!")
@@ -292,13 +307,10 @@ def main():
                    " other key, then 'Enter'). ")
     # Random simulation
     if choice == '':
-        pass
-        # print(card_visual(list(get_random_card(1))[0], style="Full") + "\n")
-        # print(card_visual(2, style="Half"))
-        # print(card_visual(15, style="Reverse"))
-        # print("\n" + card_visual(10, style="Half") + card_visual(52, style="Half"))
-        # print(card_visual(10, style="Reverse") + card_visual(52, style="Reverse"))
-
+        round_name = "Pre-Flop"
+        com_cards = []
+        cards = list(get_random_card(2))
+        cards_set = set(cards)
 
     # Custom simulation
     else:
@@ -310,8 +322,8 @@ def main():
                 display_deck()
             elif hand.lower() == 'random':
                 cards = list(get_random_card(2))
-                print("Your hand:\n - ", card_id(cards[0]), " (", cards[0], ")\n - ",
-                      card_id(cards[1]), " (", cards[1], ")\n")
+                print(f"Your hand:\n card_id(cards[0]) ({cards[0]}), {card_id(cards[1])} ({cards[1]})\n")
+                card_visual(cards)
                 break
             elif hand:
                 cards = hand.split()
@@ -326,6 +338,7 @@ def main():
                     continue
                 print("You selected:\n - ", card_id(cards[0]), " (", cards[0], ")\n - ",
                       card_id(cards[1]), " (", cards[1], ")\n")
+                card_visual(cards)
                 break
         cards_set = set(cards)
         while 1:
@@ -376,149 +389,108 @@ def main():
                 round_name = rounds[len(com_cards)]
                 break
 
-        print("\nBeginning at the", round_name, "...\n")
-        print("Your hand:\n - ", card_id(cards[0]), "\n - ", card_id(cards[1]))
-        card_visual(cards)
-        print("Community cards:\n")
-        for c in com_cards:
-            print(" - ",card_id(c))
-        card_visual(com_cards)
+    print("\nBeginning at the", round_name, "...\n")
+    print("Your hand:\n", card_id(cards[0]), ", ", card_id(cards[1]))
+    card_visual(cards)
+    print("Community cards:\n")
+    pnt = ""
+    for c in com_cards:
+        pnt += card_id(c) + ", "
+    print(pnt[:-2])
+    card_visual(com_cards)
 
-        # Begin predictions and finish out game, simulating and choosing to stay or fold.
-        print("Simulation beginning at the", round_name, ".\n")
+    # Begin predictions and finish out game, simulating and choosing to stay or fold.
+    while len(com_cards) <= 5:
+        print(f"Simulation running at the {round_name}.\n")
         print("Predicting for 10 seconds...")
 
         sim = simulate_rounds(cards, com_cards)
         odds = "stay" if  sim > 0.5 else "fold"
 
-        print("Given the odds, PokerBot recommends that you ", odds, ".")
+        print(f"Given the odds, PokerBot recommends that you {odds}.")
         while 1:
             decision = input("Stay (s) or fold (f)?")
             if decision.lower() == 'f':
                 if sim <= 0.5:
                     print("Great choice!")
-                    rabbit_hunting = input("Would you like to see what your opponent had? (y or n)")
-                    if rabbit_hunting.lower() == 'y':
-                        pass
+                else:
+                    print("Hmm. Interesting choice.")
+                rabbit_hunting = input("Would you like to see what your opponent had? (y or n)")
+                if rabbit_hunting.lower() == 'y':
+                    if len(com_cards) != 5:
+                        com_cards = com_cards + list(get_random_card(5 - len(com_cards), excluded=cards_set.union(set(com_cards))))
+                    winner,opp_hand = poker_round(cards, set(cards).union(com_cards), com_cards)
+                    opp_hand = list(opp_hand)
+                    print("Your hand:\n", card_id(cards[0]), ", ", card_id(cards[1]))
+                    card_visual(cards)
+                    print("Community cards:\n")
+                    pnt = ""
+                    for c in com_cards:
+                        pnt += card_id(c) + ", "
+                    print(pnt[:-2])
+                    card_visual(com_cards)
+                    print("Your opponent's hand:\n", card_id(opp_hand[0]), ", ", card_id(opp_hand[1]))
+                    card_visual(opp_hand)
+                    if winner == 1:
+                        if sim > 0.5:
+                            print("Rats! Looks like you shouldn't have folded.\n"
+                                  " Maybe try listening to me next time?")
+                        else:
+                            print("Oh no! Looks like we would've won; that one is on me. \n"
+                                  "I'll be sure to give you better advice next time.")
+                        return
                     else:
-                        print("Better not to know anyways. You're ready for Vegas!")
+                        if sim > 0.5:
+                            print("Wow, great fold, well done! You certainly know when to get out of the building!")
+                        else:
+                            print("Good fold! You were smart to listen to me.")
+                        return
+                else:
+                    print("Better not to know anyways. You're ready for Vegas!")
+                    return
+            elif decision.lower() == 's': # STAY
+                if round_name == "Pre-Flop":
+                    round_name = "Flop"
+                    com_cards = com_cards + list(get_random_card(3,  excluded=cards_set))
+
+                elif round_name == "Flop":
+                    round_name = "Turn"
+                    com_cards = com_cards + list(get_random_card(1, excluded=cards_set.union(set(com_cards))))
+
+                elif round_name == "Turn":
+                    round_name = "River"
+                    com_cards = com_cards + list(get_random_card(1, excluded=cards_set.union(set(com_cards))))
+
+                elif round_name == "River":
+                    print("We're in it now. Let's see what your opponent had...")
+                    winner,opp_hand = poker_round(cards, set(cards).union(com_cards), com_cards)
+                    opp_hand = list(opp_hand)
+                    print("Your opponent's hand:\n", card_id(opp_hand[0]), ", ", card_id(opp_hand[1]))
+                    card_visual(opp_hand)
+                    if winner == 1:
+                        if sim > 0.5:
+                            print("Look at that! Great win! Looks like you should take my advice more often!")
+                        else:
+                            print("Wow! Great call! I definitely know who I'm taking to Vegas next time!")
+                        return
+                    else:
+                        if sim > 0.5:
+                            print("Yikes. Unlucky loss there. That one is my bad. No, sorry, I will not reimburse you.")
+                        else:
+                            print("The odds were never in your favor. What am I here for anyways?")
                         return
 
+                print("Community cards:\n")
+                pnt = ""
+                for c in com_cards:
+                    pnt += card_id(c) + ", "
+                print(pnt[:-2])
+                card_visual(com_cards)
+                break
 
-    # Tests
-    # print(get_random_card(1))
-    # print(get_random_card(set(range(2,53))))
-    #
-    # print(get_random_card(52))
-    # print(get_random_card(10))
-    #
-    # print ("Expected: AoS, 3oD, AoH, KoH")
-    # print(card_id(13), ", ", card_id(15), ", ", card_id(52), ", ", card_id(51))
-    #
-    # print(card_id(get_random_card(1).pop()))
-    #
-    # print(is_consecutive([1,2,3,4,5]))
-    # print(is_consecutive([12,13,14,14,16]))
-    #
-    # hand = {12,13,11,10,7,20}
-    # print(evaluate_hand(hand))
-
-    # print(is_flush([1,2,3,4,60,13]))
-
-    # Cards of a kind
-    # print(cards_of_a_kind([1,1,1,1,2,2,3]))
-    # print("Expected: No pairs (0)\n", cards_of_a_kind([34,56,78,20, 1,12,11]))
-    # print("Expected: 1 Pair (1)\n",cards_of_a_kind([34,11,29,78,12,11]))
-    # print("Expected: 2 Pair (2)\n", cards_of_a_kind([34, 34,56,78,12,12]))
-    # print("Expected: 2 Pair (2)\n", cards_of_a_kind([34, 34,56,56,12,12,10]))
-    # print("Expected: 3 of a kind (3)\n", cards_of_a_kind([34,12,5,56,12,3,12]))
-    # print("Expected: 4 of a kind (4)\n", cards_of_a_kind([34, 34,56,34,12,34,10]))
-    # print("Expected: Full House (5)\n", cards_of_a_kind([34, 34,56,56,1,56,10]))
-
-    # # Evaluate hand
-    # print("Royal Flush - 10\n", evaluate_hand({1,2,48,49,50,51,52}))
-    # print("Royal Flush - 10\n", evaluate_hand({50,52,48,49,12,51,2}))
-    # print("Straight Flush - 9\n", evaluate_hand({1,2,3,4,5,6,7}))
-    # fofak = {13,2,26,39,2,52,20}
-    # for card in fofak:
-    #     print(card_id(card))
-    # print("Four of a kind - 8\n", evaluate_hand(fofak))
-    # full = {13,2,26,30,2,52,15}
-    # for card in full:
-    #     print(card_id(card))
-    # print("Full House - 7\n", evaluate_hand(full))
-    # print("Flush - 6\n", evaluate_hand({2,8,1,4,7,50,40}))
-    # straight = {8,9,23,37,12,50,48}
-    # not_straight = {10,11,12,13,14,15,16}
-    # for card in straight:
-    #     print(card_id(card))
-    # print("Straight - 5\n", evaluate_hand(straight))
-    # for card in not_straight:
-    #     print(card_id(card))
-    # print("NOT Straight - 1\n", evaluate_hand(not_straight))
-    #
-    # print("Three of a Kind - 4\n", evaluate_hand({1,14,27,4,5,46,48}))
-    # print("Two Pair - 3\n", evaluate_hand({20,33,4,50,6,19,52}))
-    #
-    # for card in {1,14,13,12,11,20,29}:
-    #     print(card_id(card))
-    # print("One Pair - 2\n", evaluate_hand({1,14,13,12,11,20,29}))
-    # print("High Card - 1\n", evaluate_hand({1,44,13,12,11,20,29}))
-    #
-    # # high_card
-    # print("Hand 1 wins - 1:", high_card({1,2,3,4,5,6,7}, {1,2,3,4,5,19,17}))
-    # for card in {33,1,3,51,5,35,37}:
-    #     print(card_id(card))
-    # for card in {1,2,3,4,13,19,17}:
-    #     print(card_id(card))
-    # print("Hand 2 wins - 2:", high_card({33,1,3,51,5,35,37}, {1,2,3,4,13,19,17}))
-    # print("Hands draw  - 0:", high_card({12,13,14,15,16,17,19}, {38,39,40,41,42,43,45}))
-
-    # Better Hand
-    # rand_deck1 = get_random_card(7)
-    # rand_deck2 = get_random_card(7)
-    # print("Hand 1: \n")
-    # for card in rand_deck1:
-    #     print(card_id(card))
-    # print("\n-\nHand 2: \n")
-    # for card in rand_deck2:
-    #     print(card_id(card))
-    #
-    # print(better_hand(rand_deck1, rand_deck2))
-    #display_deck()
-
-    #print(better_hand({35,36,44,20,21,24,31}, {32,36,14,48,50,24,31}))
-    #print(is_consecutive({35,36,44,20,21,24,31}))
-    # Hand 1:
-    #
-    # Ten of Clubs
-    # Jack of Clubs
-    # Six of Hearts
-    # Eight of Diamonds
-    # Nine of Diamonds
-    # Queen of Diamonds
-    # Six of Clubs
-    #
-    # -
-    # Hand 2:
-    #
-    # Seven of Clubs
-    # Jack of Clubs
-    # Two of Diamonds
-    # Ten of Hearts
-    # Queen of Hearts
-    # Queen of Diamonds
-    # Six of Clubs
-    # Score:  (2, [5]) ,  (2, [11])
-    # 2
-
-    # Poker Round
-    # deck = {2,3,10}
-    # deck.update({13,52}  # Pocket Rockets
-    # print("Round: ", poker_round({13,52},deck,{2,3,10}))
-
-    # Simulate Rounds
-    # simulate_rounds({13,52}, set())
+            else:
+                print("Invalid choice.")
+                continue
 
 if __name__ == '__main__':
     main()
