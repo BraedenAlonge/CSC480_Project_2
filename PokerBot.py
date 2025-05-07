@@ -45,7 +45,6 @@ def better_hand(hand1, hand2):
     """Takes in 2 set of hands."""
     e1, value_array1 = evaluate_hand(hand1)
     e2, value_array2  = evaluate_hand(hand2)
-    # print("Score: ", e1, ", ", e2)
 
     if e1 == 1 and e2 == 1: # Both are equal to 1- highest card wins
         return high_card(hand1,hand2)     # hand1 WIN = 1, hand2 WIN = 2, DRAW = 0
@@ -86,8 +85,7 @@ def poker_round(hand1, cards_in_play, community_cards):
     # Add community cards to each player's hand
     full_hand1 = set(hand1).union(community_cards)
     full_opp_hand = set(opp_hand).union(community_cards)
-    # print("Hand 1: ", hand1)
-    # print("Hand 2: ", opp_hand)
+
     return better_hand(full_hand1, full_opp_hand), opp_hand
 
 
@@ -150,7 +148,7 @@ def evaluate_hand(hand):
     if kinds == 1:
         return 2, card_types
     # High Card         - 1 Point
-    return 1, [] # Handle in another function for
+    return 1, card_types # Handle in another function for high card
 
 def is_consecutive(hand):
     """Checks if hand is consecutive"""
@@ -198,7 +196,7 @@ def is_flush(hand):
     return False
 
 def cards_of_a_kind(hand):
-    hand = [card % 13 for card in hand]
+    hand = [card % 13 if card % 13 != 0 else 13 for card in hand]
     unique_hand = set(hand)
     """Returns how many same-type cards there are.
     If there are no pairs, it will return 0.
@@ -233,27 +231,25 @@ def cards_of_a_kind(hand):
                 kinds = 2
                 card_type.append(card)
 
+    card_type.sort(key=lambda x: (-counts[x], -x))
+    full_hand = []
+    for card in counts:
+        full_hand += [card] * counts[card]
 
-    return kinds, card_type
+    # sort by quantity first, then value
+    full_hand.sort(key=lambda x: (-counts[x], -x))
+
+
+    return kinds, full_hand[:5]
 
 def high_card(hand1, hand2):
-    """Determine highest card as a tiebreaker."""
-    hand1 = [card % 13 for card in hand1]
-    while 0 in hand1:   # Ace value
-        hand1.remove(0)
-        hand1.append(13)
-    hand2 = [card % 13 for card in hand2]
-
-    while 0 in hand2:   # Ace value
-        hand2.remove(0)
-        hand2.append(13)
-
-    hand1.sort()
-    hand2.sort()
+    """Determine highest card as a tiebreaker. * * ASSUMES SORTED PROPERLY * *"""
+    hand1 = [card % 13 if card % 13 != 0 else 13 for card in hand1]
+    hand2 = [card % 13 if card % 13 != 0 else 13 for card in hand2]
 
     while hand1 and hand2:
-        c1 = hand1.pop()
-        c2 = hand2.pop()
+        c1 = hand1.pop(0)
+        c2 = hand2.pop(0)
         if c1 > c2: # Hand 1 wins high card
             return 1
         elif c1 < c2: # Hand 2 wins high card
@@ -392,7 +388,7 @@ def main():
     print("\nBeginning at the", round_name, "...\n")
     print("Your hand:\n", card_id(cards[0]), ", ", card_id(cards[1]))
     card_visual(cards)
-    print("Community cards:\n")
+    print("Community cards:")
     pnt = ""
     for c in com_cards:
         pnt += card_id(c) + ", "
